@@ -87,7 +87,7 @@ function renderUserRow(uid, data) {
     const tr = document.createElement('tr');
     const shortUid = uid.substring(0, 8) + "...";
     
-    // 🔥 新增 Email 欄位與刪除按鈕
+    // 🔥 新增：顯示 Email 欄位與刪除按鈕
     tr.innerHTML = `
         <td style="font-weight:bold; color:#fff;">${data.name || "未命名"}</td>
         <td><span class="email-tag">${data.email || "未記錄"}</span></td>
@@ -103,14 +103,14 @@ function renderUserRow(uid, data) {
     
     tr.querySelector('.edit-btn').addEventListener('click', () => openEditModal(uid, data));
     
-    // 🔥 刪除功能邏輯
+    // 🔥 刪除功能邏輯：刪除資料庫文件
     tr.querySelector('.delete-btn').addEventListener('click', async () => {
-        const confirmMsg = `⚠️ 警告！\n\n確定要刪除玩家【${data.name}】的資料嗎？\n\n這將會清除他的金幣、鑽石與遊戲進度，但他綁定的 Firebase 帳號密碼無法透過此處刪除。\n(他將變成無法讀取檔案的幽靈人口)`;
+        const confirmMsg = `⚠️ 警告！\n\n確定要刪除玩家【${data.name}】的遊戲資料嗎？\n\n這將會清除他的金幣、鑽石與進度。\n(注意：他的登入帳號密碼仍會保留在 Firebase 系統中，但遊戲內已無資料)`;
         if(confirm(confirmMsg)) {
             try {
                 await deleteDoc(doc(db, "users", uid));
-                tr.remove(); // 直接從畫面移除
-                alert("🗑️ 刪除成功！");
+                tr.remove(); // 直接從畫面移除該列
+                alert("🗑️ 遊戲資料刪除成功！");
             } catch(e) {
                 console.error("Delete failed:", e);
                 alert("刪除失敗：" + e.message);
@@ -163,7 +163,6 @@ document.getElementById('save-edit-btn').addEventListener('click', async () => {
     }
 });
 
-// 發送全服公告邏輯
 document.getElementById('send-notif-btn').addEventListener('click', async () => {
     const title = document.getElementById('notif-title').value.trim();
     const type = document.getElementById('notif-type').value;
