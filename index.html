@@ -44,6 +44,7 @@
         .btn-primary:hover { background: #2980b9; }
         .btn-danger { background: #e74c3c; color: white; }
         .btn-success { background: #2ecc71; color: white; }
+        .btn-warning { background: #f39c12; color: white; } /* 新增黃色按鈕樣式 */
 
         /* 後台主介面 */
         #dashboard-section { display: none; max-width: 1200px; margin: 0 auto; }
@@ -114,11 +115,12 @@
             <thead>
                 <tr>
                     <th>玩家名稱</th>
-                    <th>Email</th> <th>UID</th>
+                    <th>Email</th>
+                    <th>UID</th>
                     <th>💰 金幣</th>
                     <th>💎 鑽石</th>
                     <th>🔥 戰力</th>
-                    <th>操作</th>
+                    <th style="min-width: 200px;">操作</th>
                 </tr>
             </thead>
             <tbody id="user-list-body">

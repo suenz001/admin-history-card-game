@@ -1,7 +1,8 @@
 // admin.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, getDocs, doc, updateDoc, deleteDoc, orderBy, query, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+// 🔥 新增 sendPasswordResetEmail
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCaLWMEi7wNxeCjUQC86axbRsxLMDWQrq8",
@@ -87,7 +88,7 @@ function renderUserRow(uid, data) {
     const tr = document.createElement('tr');
     const shortUid = uid.substring(0, 8) + "...";
     
-    // 🔥 新增：顯示 Email 欄位與刪除按鈕
+    // 🔥 操作區塊：新增「重設密碼」按鈕
     tr.innerHTML = `
         <td style="font-weight:bold; color:#fff;">${data.name || "未命名"}</td>
         <td><span class="email-tag">${data.email || "未記錄"}</span></td>
@@ -96,24 +97,44 @@ function renderUserRow(uid, data) {
         <td class="res-gem">${data.gems || 0}</td>
         <td>${data.combatPower || 0}</td>
         <td style="display:flex; gap:5px;">
-            <button class="btn-primary edit-btn" style="padding:5px 10px; font-size:0.8em;">✏️ 編輯</button>
-            <button class="btn-danger delete-btn" style="padding:5px 10px; font-size:0.8em;">🗑️ 刪除</button>
+            <button class="btn-primary edit-btn" style="padding:5px 8px; font-size:0.8em;">✏️ 編輯</button>
+            <button class="btn-warning reset-pwd-btn" style="padding:5px 8px; font-size:0.8em;">🔑 密碼</button>
+            <button class="btn-danger delete-btn" style="padding:5px 8px; font-size:0.8em;">🗑️ 刪除</button>
         </td>
     `;
     
+    // 編輯
     tr.querySelector('.edit-btn').addEventListener('click', () => openEditModal(uid, data));
     
-    // 🔥 刪除功能邏輯：刪除資料庫文件
+    // 刪除
     tr.querySelector('.delete-btn').addEventListener('click', async () => {
-        const confirmMsg = `⚠️ 警告！\n\n確定要刪除玩家【${data.name}】的遊戲資料嗎？\n\n這將會清除他的金幣、鑽石與進度。\n(注意：他的登入帳號密碼仍會保留在 Firebase 系統中，但遊戲內已無資料)`;
+        const confirmMsg = `⚠️ 警告！\n\n確定要刪除玩家【${data.name}】的遊戲資料嗎？\n這將清除他的所有進度。\n(註：此操作不會刪除 Firebase 帳號，但會清空遊戲數據)`;
         if(confirm(confirmMsg)) {
             try {
                 await deleteDoc(doc(db, "users", uid));
-                tr.remove(); // 直接從畫面移除該列
+                tr.remove(); 
                 alert("🗑️ 遊戲資料刪除成功！");
             } catch(e) {
                 console.error("Delete failed:", e);
                 alert("刪除失敗：" + e.message);
+            }
+        }
+    });
+
+    // 🔥 重設密碼邏輯
+    tr.querySelector('.reset-pwd-btn').addEventListener('click', async () => {
+        if (!data.email || data.email === "未記錄") {
+            return alert("❌ 此玩家沒有記錄 Email，無法發送重設信！");
+        }
+        
+        const confirmMsg = `📧 確定要發送「密碼重設信」給：\n${data.email} 嗎？\n\n玩家將會收到官方信件，點擊連結後即可設定新密碼。`;
+        if (confirm(confirmMsg)) {
+            try {
+                await sendPasswordResetEmail(auth, data.email);
+                alert("✅ 發送成功！請通知玩家查收信箱。");
+            } catch (e) {
+                console.error("Reset password failed:", e);
+                alert("發送失敗：" + e.message);
             }
         }
     });
