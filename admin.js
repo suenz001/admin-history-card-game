@@ -1,7 +1,6 @@
 // admin.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, getDocs, doc, updateDoc, deleteDoc, orderBy, query, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-// 🔥 新增 sendPasswordResetEmail
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 const firebaseConfig = {
@@ -35,6 +34,12 @@ const userListBody = document.getElementById('user-list-body');
 const statusMsg = document.getElementById('status-msg');
 const editModal = document.getElementById('edit-modal');
 
+// 🔥 Dashboard 元素
+const statTotalPlayers = document.getElementById('stat-total-players');
+const statNewToday = document.getElementById('stat-new-today');
+const statTotalGold = document.getElementById('stat-total-gold');
+const statTotalGems = document.getElementById('stat-total-gems');
+
 onAuthStateChanged(auth, (user) => {
     if (user) {
         currentUser = user;
@@ -67,16 +72,45 @@ document.getElementById('refresh-btn').addEventListener('click', loadAllUsers);
 async function loadAllUsers() {
     statusMsg.innerText = "讀取資料中...";
     userListBody.innerHTML = "";
+    
     try {
         const q = query(collection(db, "users"), orderBy("combatPower", "desc"));
         const querySnapshot = await getDocs(q);
+        
+        // 🔥 初始化統計數據
+        let totalGold = 0;
+        let totalGems = 0;
+        let newPlayersCount = 0;
         let count = 0;
+
+        // 計算今日開始的時間戳
+        const todayStart = new Date();
+        todayStart.setHours(0,0,0,0);
+
         querySnapshot.forEach((doc) => {
             const data = doc.data();
+            
+            // 累加經濟數據
+            totalGold += (data.gold || 0);
+            totalGems += (data.gems || 0);
+
+            // 判斷是否為今日新增
+            if (data.createdAt && data.createdAt.seconds * 1000 > todayStart.getTime()) {
+                newPlayersCount++;
+            }
+
             renderUserRow(doc.id, data);
             count++;
         });
+
+        // 🔥 更新看板 UI
+        statTotalPlayers.innerText = count;
+        statNewToday.innerText = newPlayersCount;
+        statTotalGold.innerText = totalGold.toLocaleString();
+        statTotalGems.innerText = totalGems.toLocaleString();
+        
         statusMsg.innerText = `讀取完成，共 ${count} 位玩家`;
+
     } catch (e) {
         console.error("Load users failed:", e);
         statusMsg.innerText = "讀取失敗";
@@ -88,14 +122,31 @@ function renderUserRow(uid, data) {
     const tr = document.createElement('tr');
     const shortUid = uid.substring(0, 8) + "...";
     
-    // 🔥 操作區塊：新增「重設密碼」按鈕
+    // 處理最後登入時間
+    let lastLoginStr = "尚無紀錄";
+    let isInactive = false;
+
+    if (data.lastLoginAt) {
+        const loginDate = new Date(data.lastLoginAt.seconds * 1000);
+        lastLoginStr = loginDate.toLocaleString();
+        
+        // 檢查是否超過 30 天未登入
+        const diffDays = (Date.now() - loginDate.getTime()) / (1000 * 60 * 60 * 24);
+        if (diffDays > 30) isInactive = true;
+    }
+
+    // 格式化最後登入顯示
+    const lastLoginHtml = isInactive 
+        ? `<span class="date-tag" style="color:#e74c3c; font-weight:bold;">${lastLoginStr} (幽靈)</span>` 
+        : `<span class="date-tag">${lastLoginStr}</span>`;
+
     tr.innerHTML = `
         <td style="font-weight:bold; color:#fff;">${data.name || "未命名"}</td>
         <td><span class="email-tag">${data.email || "未記錄"}</span></td>
         <td><span class="uid-tag" title="${uid}">${shortUid}</span></td>
         <td class="res-gold">${data.gold || 0}</td>
         <td class="res-gem">${data.gems || 0}</td>
-        <td>${data.combatPower || 0}</td>
+        <td>${lastLoginHtml}</td> <td>${data.combatPower || 0}</td>
         <td style="display:flex; gap:5px;">
             <button class="btn-primary edit-btn" style="padding:5px 8px; font-size:0.8em;">✏️ 編輯</button>
             <button class="btn-warning reset-pwd-btn" style="padding:5px 8px; font-size:0.8em;">🔑 密碼</button>
@@ -103,10 +154,8 @@ function renderUserRow(uid, data) {
         </td>
     `;
     
-    // 編輯
     tr.querySelector('.edit-btn').addEventListener('click', () => openEditModal(uid, data));
     
-    // 刪除
     tr.querySelector('.delete-btn').addEventListener('click', async () => {
         const confirmMsg = `⚠️ 警告！\n\n確定要刪除玩家【${data.name}】的遊戲資料嗎？\n這將清除他的所有進度。\n(註：此操作不會刪除 Firebase 帳號，但會清空遊戲數據)`;
         if(confirm(confirmMsg)) {
@@ -121,7 +170,6 @@ function renderUserRow(uid, data) {
         }
     });
 
-    // 🔥 重設密碼邏輯
     tr.querySelector('.reset-pwd-btn').addEventListener('click', async () => {
         if (!data.email || data.email === "未記錄") {
             return alert("❌ 此玩家沒有記錄 Email，無法發送重設信！");

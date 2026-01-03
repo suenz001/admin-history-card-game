@@ -44,10 +44,29 @@
         .btn-primary:hover { background: #2980b9; }
         .btn-danger { background: #e74c3c; color: white; }
         .btn-success { background: #2ecc71; color: white; }
-        .btn-warning { background: #f39c12; color: white; } /* 新增黃色按鈕樣式 */
+        .btn-warning { background: #f39c12; color: white; } 
 
         /* 後台主介面 */
         #dashboard-section { display: none; max-width: 1200px; margin: 0 auto; }
+
+        /* 🔥 新增：經濟看板樣式 */
+        #stats-dashboard {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: #34495e;
+            padding: 20px;
+            border-radius: 8px;
+            flex: 1;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border-top: 3px solid #7f8c8d;
+        }
+        .stat-card h3 { margin: 0 0 10px; font-size: 1em; color: #bdc3c7; }
+        .stat-card div { font-size: 1.8em; font-weight: bold; color: #ecf0f1; }
         
         /* 表格樣式 */
         .data-table {
@@ -69,6 +88,7 @@
         .email-tag { font-size: 0.9em; color: #f39c12; }
         .res-gold { color: #f1c40f; font-weight: bold; }
         .res-gem { color: #2ecc71; font-weight: bold; }
+        .date-tag { font-size: 0.8em; color: #95a5a6; }
 
         /* 彈窗樣式 */
         .modal {
@@ -111,6 +131,25 @@
             <span id="status-msg" style="margin-left:15px; color:#f1c40f;"></span>
         </div>
 
+        <div id="stats-dashboard">
+            <div class="stat-card" style="border-top-color: #3498db;">
+                <h3>👥 總玩家數</h3>
+                <div id="stat-total-players">0</div>
+            </div>
+            <div class="stat-card" style="border-top-color: #2ecc71;">
+                <h3>🆕 今日新增</h3>
+                <div id="stat-new-today">0</div>
+            </div>
+            <div class="stat-card" style="border-top-color: #f1c40f;">
+                <h3>💰 全服金幣</h3>
+                <div id="stat-total-gold" style="color:#f1c40f;">0</div>
+            </div>
+            <div class="stat-card" style="border-top-color: #9b59b6;">
+                <h3>💎 全服鑽石</h3>
+                <div id="stat-total-gems" style="color:#2ecc71;">0</div>
+            </div>
+        </div>
+
         <table class="data-table">
             <thead>
                 <tr>
@@ -119,7 +158,7 @@
                     <th>UID</th>
                     <th>💰 金幣</th>
                     <th>💎 鑽石</th>
-                    <th>🔥 戰力</th>
+                    <th>🕒 最後登入</th> <th>🔥 戰力</th>
                     <th style="min-width: 200px;">操作</th>
                 </tr>
             </thead>
