@@ -123,6 +123,31 @@
             <tbody id="user-list-body">
                 </tbody>
         </table>
+
+        <div style="background:#2c3e50; padding:20px; border-radius:8px; margin-top:30px; border: 1px solid #7f8c8d;">
+            <h2 style="margin-top:0; color:#e67e22;">📢 發送全服公告與獎勵</h2>
+            
+            <div class="form-group">
+                <label>標題</label>
+                <input type="text" id="notif-title" placeholder="例如：維修補償、佳節愉快...">
+            </div>
+            
+            <div class="form-group">
+                <label>獎勵類型</label>
+                <select id="notif-type" style="width:95%; padding:10px; border-radius:5px;">
+                    <option value="none">無獎勵 (純公告)</option>
+                    <option value="gold">💰 金幣 (Gold)</option>
+                    <option value="gems">💎 鑽石 (Gems)</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>獎勵數量</label>
+                <input type="number" id="notif-amount" placeholder="0" value="0">
+            </div>
+
+            <button id="send-notif-btn" class="btn-primary" style="width:100%; background:#e67e22;">🚀 發送公告</button>
+        </div>
     </div>
 
     <div id="edit-modal" class="modal hidden">
