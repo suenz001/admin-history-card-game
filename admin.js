@@ -1,6 +1,6 @@
 // admin.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, getDocs, doc, updateDoc, orderBy, query, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, getDocs, doc, updateDoc, deleteDoc, orderBy, query, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 const firebaseConfig = {
@@ -86,15 +86,38 @@ async function loadAllUsers() {
 function renderUserRow(uid, data) {
     const tr = document.createElement('tr');
     const shortUid = uid.substring(0, 8) + "...";
+    
+    // 🔥 新增 Email 欄位與刪除按鈕
     tr.innerHTML = `
         <td style="font-weight:bold; color:#fff;">${data.name || "未命名"}</td>
+        <td><span class="email-tag">${data.email || "未記錄"}</span></td>
         <td><span class="uid-tag" title="${uid}">${shortUid}</span></td>
         <td class="res-gold">${data.gold || 0}</td>
         <td class="res-gem">${data.gems || 0}</td>
         <td>${data.combatPower || 0}</td>
-        <td><button class="btn-primary edit-btn" style="padding:5px 10px; font-size:0.8em;">✏️ 編輯</button></td>
+        <td style="display:flex; gap:5px;">
+            <button class="btn-primary edit-btn" style="padding:5px 10px; font-size:0.8em;">✏️ 編輯</button>
+            <button class="btn-danger delete-btn" style="padding:5px 10px; font-size:0.8em;">🗑️ 刪除</button>
+        </td>
     `;
+    
     tr.querySelector('.edit-btn').addEventListener('click', () => openEditModal(uid, data));
+    
+    // 🔥 刪除功能邏輯
+    tr.querySelector('.delete-btn').addEventListener('click', async () => {
+        const confirmMsg = `⚠️ 警告！\n\n確定要刪除玩家【${data.name}】的資料嗎？\n\n這將會清除他的金幣、鑽石與遊戲進度，但他綁定的 Firebase 帳號密碼無法透過此處刪除。\n(他將變成無法讀取檔案的幽靈人口)`;
+        if(confirm(confirmMsg)) {
+            try {
+                await deleteDoc(doc(db, "users", uid));
+                tr.remove(); // 直接從畫面移除
+                alert("🗑️ 刪除成功！");
+            } catch(e) {
+                console.error("Delete failed:", e);
+                alert("刪除失敗：" + e.message);
+            }
+        }
+    });
+
     userListBody.appendChild(tr);
 }
 
@@ -140,7 +163,7 @@ document.getElementById('save-edit-btn').addEventListener('click', async () => {
     }
 });
 
-// 🔥 新增：發送全服公告邏輯
+// 發送全服公告邏輯
 document.getElementById('send-notif-btn').addEventListener('click', async () => {
     const title = document.getElementById('notif-title').value.trim();
     const type = document.getElementById('notif-type').value;
@@ -159,7 +182,7 @@ document.getElementById('send-notif-btn').addEventListener('click', async () => 
         await addDoc(collection(db, "announcements"), {
             title: title,
             reward: { type: type, amount: amount },
-            timestamp: serverTimestamp() // 使用伺服器時間
+            timestamp: serverTimestamp() 
         });
         alert("📢 公告發送成功！玩家重新整理或打開通知即可看到。");
         document.getElementById('notif-title').value = "";
